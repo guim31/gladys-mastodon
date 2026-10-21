@@ -79,7 +79,8 @@ favourites still do). The account itself never starts a trigger, and notificatio
   Mastodon by default).
 - **Send a Mastodon private mention**: writes privately to an account. The **Recipient** must be an allowed
   account or one the account follows: the integration never writes to a stranger. **In reply to** takes the
-  post id variable of a trigger, to answer in the same conversation.
+  post id variable of a trigger, to answer in the same conversation. The other `@` of the message are
+  neutralised (an invisible character follows them): a text taken from a trigger never adds a recipient.
 
 Both actions return **Sent**, the **Post id**, the **Post address** and the **Error**, for the following
 actions of the scene. At most 30 posts an hour come from the scenes: beyond, they are skipped.
@@ -110,7 +111,7 @@ actions of the scene. At most 30 posts an hour come from the scenes: beyond, the
 
 - One account per Gladys. The token gives the integration the rights of the account: use a dedicated one.
 - Mentions take effect in about a second through the streaming API; notifications missed during a cut are
-  read back afterwards, but those older than 10 minutes start no scene, and at most 40 are read back.
+  read back afterwards, but those older than 10 minutes start no scene, and at most 200 are read back.
 - Gladys does not give a device integration its camera images: the image of a post comes from an address.
 - Mastodon limits an account to 300 posts in 3 hours and 300 requests in 5 minutes; the integration makes
   about 3 requests every 5 minutes, more when notifications arrive.

@@ -120,11 +120,13 @@ export function createFakeServer() {
     }
     if (path === '/api/v1/notifications') {
       const since = query.get('since_id');
+      const min = query.get('min_id');
       const limit = Number(query.get('limit') ?? 40);
-      const list = server.notifications
-        .filter((n) => !since || n.id > since)
-        .reverse()
-        .slice(0, limit);
+      // min_id: the page right after it (its oldest end); since_id: the newest page.
+      const after = server.notifications.filter(
+        (n) => (!since || n.id > since) && (!min || n.id > min),
+      );
+      const list = min ? after.slice(0, limit).reverse() : after.reverse().slice(0, limit);
       return json(200, list);
     }
     if (path === '/api/v1/markers') {
@@ -233,6 +235,7 @@ export function createFakeServer() {
       this.open = false;
       this.listeners = {};
       server.sockets.push(this);
+      server.onSocket?.(this); // a test hook: something happens while it opens
       setImmediate(() => {
         if (server.down || !server.streaming || !server.tokens.has(protocols?.[0])) {
           this.emit('error', {});

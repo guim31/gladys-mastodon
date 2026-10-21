@@ -83,7 +83,9 @@ als 10 Minuten sind (erhalten, während Gladys gestoppt war), starten nichts.
   Länge gekürzt (500 Zeichen auf Mastodon standardmäßig).
 - **Private Mastodon-Erwähnung senden**: schreibt einem Konto privat. Der **Empfänger** muss ein erlaubtes
   Konto sein oder eines, dem das Konto folgt: Die Integration schreibt nie an Unbekannte. **Antwort auf
-  (Beitrags-ID)** nimmt die Beitrags-ID-Variable eines Auslösers, um in derselben Unterhaltung zu antworten.
+  (Beitrags-ID)** nimmt die Beitrags-ID-Variable eines Auslösers, um in derselben Unterhaltung zu antworten. Die anderen `@` der Nachricht werden
+  entschärft (ein unsichtbares Zeichen folgt ihnen): Ein aus einem Auslöser übernommener Text fügt nie einen
+  Empfänger hinzu.
 
 Beide Aktionen geben **Gesendet**, die **Beitrags-ID**, die **Adresse des Beitrags** und den **Fehler** an die
 folgenden Aktionen der Szene zurück. Höchstens 30 Beiträge pro Stunde kommen von Szenen: Darüber hinaus werden
@@ -119,7 +121,7 @@ sie übersprungen.
 - Ein Konto pro Gladys. Das Token gibt der Integration die Rechte des Kontos: Nimm ein eigenes Konto.
 - Erwähnungen wirken dank der Streaming-API in etwa einer Sekunde; während einer Unterbrechung verpasste
   Benachrichtigungen werden danach nachgelesen, aber solche, die älter als 10 Minuten sind, starten keine
-  Szene, und höchstens 40 werden nachgelesen.
+  Szene, und höchstens 200 werden nachgelesen.
 - Gladys gibt einer Geräte-Integration keine Kamerabilder: Das Bild eines Beitrags kommt von einer Adresse.
 - Mastodon begrenzt ein Konto auf 300 Beiträge in 3 Stunden und 300 Anfragen in 5 Minuten; die Integration
   stellt etwa 3 Anfragen alle 5 Minuten, mehr, wenn Benachrichtigungen eintreffen.

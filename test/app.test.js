@@ -201,7 +201,11 @@ test('after a cut, the missed notifications are read back once, in order', async
 test('a restart reads what came while stopped, but old notifications fire nothing', async (t) => {
   const server = createFakeServer();
   server.notify('mention', ALICE, { text: 'already handled' });
-  const stored = { lastId: server.notifications[0].id, recent: [] };
+  const stored = {
+    account: `social.example|${SELF_ID}`,
+    lastId: server.notifications[0].id,
+    recent: [],
+  };
   server.notify('mention', ALICE, {
     text: 'too old',
     at: START - MAX_NOTIFICATION_AGE_MS - 1000,
@@ -461,4 +465,101 @@ test('another account: starts again from its newest notification', async (t) => 
   assert.equal(world.app.connection, 'connected');
   assert.equal(world.app.data.lastId, world.server.notifications.at(-1).id);
   assert.equal(world.fake.sceneEvents.length, 1);
+});
+
+test('a long cut: read back from its oldest end, page after page', async (t) => {
+  const world = await connected(t);
+  world.server.sockets[0].open = false; // dead: misses what follows
+  for (let i = 0; i < 60; i += 1) {
+    world.server.notify('favourite', BOB);
+  }
+  world.server.notify('mention', ALICE, { text: 'in the middle' });
+  for (let i = 0; i < 30; i += 1) {
+    world.server.notify('favourite', BOB);
+  }
+  world.server.sockets[0].drop(1006);
+  await settle(200);
+  assert.equal(events(world, TRIGGERS.INTERACTION).length, 90);
+  assert.deepEqual(
+    events(world, TRIGGERS.MENTION).map((event) => event.data.text),
+    ['in the middle'],
+  );
+  assert.equal(world.app.data.lastId, world.server.notifications.at(-1).id);
+});
+
+test('a notification during the reconnection is not lost', async (t) => {
+  const server = createFakeServer();
+  const world = await connected(t, { server });
+  // The mention arrives while the new stream opens: no socket carries it,
+  // then a newer favourite comes through the new stream. The catch-up after
+  // the opening still starts before the mention.
+  server.onSocket = () => {
+    server.onSocket = null;
+    server.notify('mention', ALICE, { text: 'between the two' });
+    setImmediate(() => setImmediate(() => server.notify('favourite', BOB)));
+  };
+  server.sockets[0].drop(1006);
+  await settle(100);
+  assert.deepEqual(
+    events(world, TRIGGERS.MENTION).map((event) => event.data.text),
+    ['between the two'],
+  );
+  assert.equal(events(world, TRIGGERS.INTERACTION).length, 1);
+});
+
+test('a state of another account found in /data starts afresh', async (t) => {
+  const server = createFakeServer();
+  server.notify('mention', ALICE, { text: 'history' });
+  const world = await connected(t, {
+    server,
+    stored: {
+      account: 'old.example|42',
+      lastId: '113000000000000001',
+      recent: [
+        { kind: 'follow', author: 'x@old.example', text: '', at: '2026-10-01T00:00:00.000Z' },
+      ],
+    },
+  });
+  assert.equal(world.app.data.account, `social.example|${SELF_ID}`);
+  assert.equal(world.app.data.lastId, server.notifications.at(-1).id);
+  assert.deepEqual(world.fake.sceneEvents, []);
+  assert.ok(!world.app.data.recent.some((entry) => entry.author === 'x@old.example'));
+});
+
+test('a private mention never adds a recipient from its text', async (t) => {
+  const world = await connected(t);
+  await world.fake.sceneAction(SCENE_ACTIONS.DIRECT, {
+    recipient: 'alice',
+    message: 'Reply: hello @stranger@evil.example and @bob',
+  });
+  const [status] = world.server.statuses;
+  assert.equal(
+    status.status,
+    '@alice@social.example Reply: hello @\u2060stranger@\u2060evil.example and @\u2060bob',
+  );
+});
+
+test('a failed post does not use the hourly quota', async (t) => {
+  const world = await connected(t);
+  for (let i = 0; i < MAX_POSTS_PER_HOUR + 5; i += 1) {
+    await world.fake.sceneAction(SCENE_ACTIONS.POST, {
+      message: 'x',
+      image_url: 'http://camera.example/missing.jpg',
+    });
+  }
+  const ack = await world.fake.sceneAction(SCENE_ACTIONS.POST, { message: 'works' });
+  assert.equal(ack.data.outputs.sent, true);
+});
+
+test('stop() does not wait for a stream that never opens', async (t) => {
+  const server = createFakeServer();
+  server.WebSocket = class {
+    addEventListener() {}
+    close() {}
+  };
+  const world = await createWorld({ server });
+  const started = Date.now();
+  await world.app.stop();
+  assert.ok(Date.now() - started < 1000);
+  t.after(() => {});
 });

@@ -83,7 +83,9 @@ et favoris, si). Le compte lui-même ne démarre jamais de déclencheur, et les 
   permise par le serveur (500 caractères par défaut sur Mastodon).
 - **Envoyer une mention privée Mastodon** : écrit en privé à un compte. Le **Destinataire** doit être un compte
   autorisé ou suivi par le compte : l'intégration n'écrit jamais à un inconnu. **En réponse à (identifiant)**
-  prend la variable identifiant du message d'un déclencheur, pour répondre dans la même conversation.
+  prend la variable identifiant du message d'un déclencheur, pour répondre dans la même conversation. Les
+  autres `@` du message sont neutralisés (suivis d'un caractère invisible) : un texte repris d'un déclencheur
+  n'ajoute jamais de destinataire.
 
 Les deux actions rendent **Envoyé**, l'**Identifiant du message**, l'**Adresse du message** et l'**Erreur**,
 pour les actions suivantes de la scène. Les scènes publient 30 messages par heure au plus : au-delà, ils sont
@@ -118,7 +120,7 @@ ignorés.
 
 - Un compte par Gladys. Le jeton donne à l'intégration les droits du compte : utilisez un compte dédié.
 - Les mentions prennent effet en une seconde environ grâce à l'API de streaming ; les notifications manquées
-  pendant une coupure sont relues ensuite, mais celles de plus de 10 minutes ne démarrent aucune scène, et 40
+  pendant une coupure sont relues ensuite, mais celles de plus de 10 minutes ne démarrent aucune scène, et 200
   au plus sont relues.
 - Gladys ne donne pas ses images de caméra à une intégration d'appareils : l'image d'un message vient d'une
   adresse.

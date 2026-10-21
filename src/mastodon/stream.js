@@ -18,6 +18,7 @@ export const OPEN_TIMEOUT_MS = 15_000;
  * @param {typeof WebSocket} [options.WebSocket]
  * @param {(notification: object) => void} options.onNotification
  * @param {(code: number) => void} options.onClose called once, after an open
+ * @param {AbortSignal} [options.signal] gives up the opening (stop of the integration)
  * @returns {Promise<{ close(): void }>}
  */
 export function openStream({
@@ -26,11 +27,28 @@ export function openStream({
   WebSocket: WebSocketImpl = globalThis.WebSocket,
   onNotification,
   onClose,
+  signal,
 }) {
   return new Promise((resolve, reject) => {
     let opened = false;
     let closed = false;
+    if (signal?.aborted) {
+      reject(new Error('Stopped'));
+      return;
+    }
     const socket = new WebSocketImpl(url, [token]);
+    signal?.addEventListener(
+      'abort',
+      () => {
+        if (!opened && !closed) {
+          closed = true;
+          clearTimeout(timer);
+          socket.close();
+          reject(new Error('Stopped'));
+        }
+      },
+      { once: true },
+    );
     const timer = setTimeout(() => {
       if (!opened) {
         closed = true;

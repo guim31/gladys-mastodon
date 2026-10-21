@@ -57,7 +57,7 @@ idempotency key.
 - One account per Gladys; use a dedicated account, the token gives its rights.
 - Gladys gives a device integration no access to its camera images: the image of a post comes from an
   address the container can reach.
-- Notifications missed during a cut are read back (40 at most); those older than 10 minutes start no scene.
+- Notifications missed during a cut are read back (200 at most); those older than 10 minutes start no scene.
 - Polls, edits and admin notifications are not triggers.
 - Not checked against Mastodon itself (only its documented API) nor Akkoma/Pleroma.
 

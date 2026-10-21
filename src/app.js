@@ -25,6 +25,7 @@ import {
   ERROR_KINDS,
   MastodonClient,
   MastodonError,
+  NOTIFICATIONS_PAGE,
   TRANSIENT_KINDS,
   compareIds,
 } from './mastodon/client.js';
@@ -62,7 +63,14 @@ export const HEARTBEAT_MS = 12 * 60 * 60 * 1000;
 export const MAX_POSTS_PER_HOUR = 30;
 export const RECENT_KEPT = 5;
 const SEEN_KEPT = 200;
+// Catch-up after a cut: 5 pages of 40 notifications at most.
+export const CATCH_UP_PAGES = 5;
 const STATUS_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+// "@" followed by a zero-width joiner: Mastodon addresses a direct status to
+// every account mentioned in its text, so a text echoed from a trigger
+// ("Reply: {{text}}") must not add a stranger.
+export const withoutMentions = (value) => value.replace(/@(?=[\w.-])/g, '@\u2060');
 
 const text = (value) => (typeof value === 'string' ? value : '');
 
@@ -122,6 +130,7 @@ export function registerHandlers(gladys, options = {}) {
   let lastError = null;
   let counters = null; // { followers, following, statuses, unread }
   let stream = null;
+  let streamFailures = 0;
   let nudge = null; // wakes the connected loop up (stream closed)
   let controller = null; // aborts the running loop
   let running = null;
@@ -297,7 +306,7 @@ export function registerHandlers(gladys, options = {}) {
       refreshWidget();
     }
     const age = now() - Date.parse(notification.created_at);
-    if (age > MAX_NOTIFICATION_AGE_MS) {
+    if (!(age <= MAX_NOTIFICATION_AGE_MS)) {
       logger.debug(`Notification ${id} is too old for the triggers`);
       return;
     }
@@ -323,7 +332,7 @@ export function registerHandlers(gladys, options = {}) {
 
   // The notifications after the last one handled, oldest first. The very
   // first time, only the place is taken: the history fires nothing.
-  async function catchUp(signal) {
+  async function catchUp(signal, from) {
     if (!data.lastId) {
       const latest = await client.notifications({ signal });
       latest.forEach((notification) => remember(notification.id));
@@ -350,12 +359,20 @@ export function registerHandlers(gladys, options = {}) {
       save();
       return;
     }
-    const sinceId = data.lastId === '0' ? undefined : data.lastId;
-    const list = await client.notifications({ sinceId, signal });
-    for (const notification of [...list].reverse()) {
-      enqueue(notification);
+    // From the id taken before the stream opened: what the stream brought
+    // meanwhile moves lastId, never the start of the catch-up.
+    let after = from ?? (data.lastId === '0' ? undefined : data.lastId);
+    for (let page = 0; page < CATCH_UP_PAGES; page += 1) {
+      // min_id: the page right after `after` (oldest first), not the newest one.
+      const list = await client.notifications({ minId: after, signal });
+      const ordered = [...list].sort((a, b) => compareIds(a.id, b.id));
+      ordered.forEach(enqueue);
+      await processing;
+      if (list.length < NOTIFICATIONS_PAGE || ordered.length === 0) {
+        break;
+      }
+      after = ordered.at(-1).id;
     }
-    await processing;
   }
 
   function closeStream() {
@@ -364,8 +381,9 @@ export function registerHandlers(gladys, options = {}) {
     current?.close();
   }
 
-  async function startStream() {
+  async function startStream(signal) {
     stream = await openStream({
+      signal,
       url: streamUrl,
       token: config.access_token,
       WebSocket: WebSocketImpl,
@@ -380,6 +398,20 @@ export function registerHandlers(gladys, options = {}) {
     });
   }
 
+  // The state of /data belongs to one account of one server: another one
+  // (a configuration changed while the container was stopped) starts afresh.
+  function adoptAccount(key) {
+    if (data.account === key) {
+      return;
+    }
+    if (data.account !== undefined || data.lastId) {
+      data = { recent: [] };
+      seen = new Set();
+    }
+    data.account = key;
+    save();
+  }
+
   async function connectOnce(signal) {
     const credentials = await client.verifyCredentials({ signal });
     const server = await client.instance({ signal });
@@ -391,8 +423,11 @@ export function registerHandlers(gladys, options = {}) {
     allowed = new Set(
       config.allowed_accounts.map((entry) => parseAccount(entry, domain)).filter(Boolean),
     );
+    adoptAccount(`${client.base.host}|${account.id}`);
     await publishDevice();
-    await catchUp(signal);
+    const from = data.lastId;
+    await ensureStream(signal);
+    await catchUp(signal, from);
     await refreshCounters(signal, credentials);
     connection = CONNECTION.CONNECTED;
     lastError = null;
@@ -404,21 +439,29 @@ export function registerHandlers(gladys, options = {}) {
     refreshWidget();
   }
 
-  async function runConnected(signal) {
-    let streamFailures = 0;
-    while (!signal.aborted) {
-      if (!stream) {
-        try {
-          await startStream();
-          streamFailures = 0;
-          streamLog.ok();
-        } catch (err) {
-          streamFailures += 1;
-          streamLog.fail(
-            `Mastodon streaming API unavailable, reading the notifications every minute: ${err.message}`,
-          );
-        }
+  // Opened before each catch-up: a notification posted in between comes
+  // through one or the other (the ids already handled are skipped).
+  async function ensureStream(signal) {
+    if (stream || signal.aborted) {
+      return;
+    }
+    try {
+      await startStream(signal);
+      streamFailures = 0;
+      streamLog.ok();
+    } catch (err) {
+      if (signal.aborted) {
+        return;
       }
+      streamFailures += 1;
+      streamLog.fail(
+        `Mastodon streaming API unavailable, reading the notifications every minute: ${err.message}`,
+      );
+    }
+  }
+
+  async function runConnected(signal) {
+    while (!signal.aborted) {
       const wait = stream
         ? REFRESH_MS
         : RETRY_DELAYS_MS[Math.min(streamFailures - 1, RETRY_DELAYS_MS.length - 1)];
@@ -427,7 +470,9 @@ export function registerHandlers(gladys, options = {}) {
       if (signal.aborted) {
         return;
       }
-      await catchUp(signal);
+      const from = data.lastId;
+      await ensureStream(signal);
+      await catchUp(signal, from);
       await refreshCounters(signal);
     }
   }
@@ -552,7 +597,6 @@ export function registerHandlers(gladys, options = {}) {
     if (postTimes.length >= MAX_POSTS_PER_HOUR) {
       throw new MastodonError(ERROR_KINDS.TOO_MANY_POSTS, 'Too many posts from scenes');
     }
-    postTimes.push(now());
     const mediaIds = [];
     if (imageUrl) {
       const image = await fetchImage(imageUrl, { fetch: fetchImpl });
@@ -569,6 +613,7 @@ export function registerHandlers(gladys, options = {}) {
       body.in_reply_to_id = inReplyTo;
     }
     const created = await client.postStatus(body);
+    postTimes.push(now()); // only what was posted counts
     scheduleCounters();
     return created;
   }
@@ -638,7 +683,7 @@ export function registerHandlers(gladys, options = {}) {
         );
       }
       const created = await post({
-        status: `@${recipient} ${message}`,
+        status: `@${recipient} ${withoutMentions(message)}`,
         visibility: 'direct',
         spoiler: '',
         imageUrl: '',

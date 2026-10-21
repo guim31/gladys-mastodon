@@ -83,7 +83,8 @@ de 10 minutos (recibidas mientras Gladys estaba detenido) no inician nada.
 - **Enviar una mención privada de Mastodon**: escribe en privado a una cuenta. El **Destinatario** debe ser una
   cuenta autorizada o seguida por la cuenta: la integración nunca escribe a un desconocido. **En respuesta a
   (identificador)** toma la variable identificador del mensaje de un disparador, para responder en la misma
-  conversación.
+  conversación. Las demás `@` del mensaje se neutralizan (les sigue un carácter invisible): un texto tomado de
+  un disparador nunca añade un destinatario.
 
 Ambas acciones devuelven **Enviado**, el **Identificador del mensaje**, la **Dirección del mensaje** y el
 **Error**, para las acciones siguientes de la escena. Las escenas publican 30 mensajes por hora como máximo:
@@ -117,7 +118,7 @@ por encima, se omiten.
 - Una cuenta por Gladys. El token da a la integración los derechos de la cuenta: utilice una cuenta dedicada.
 - Las menciones surten efecto en un segundo aproximadamente gracias a la API de streaming; las notificaciones
   perdidas durante un corte se releen después, pero las de más de 10 minutos no inician ninguna escena, y se
-  releen 40 como máximo.
+  releen 200 como máximo.
 - Gladys no da sus imágenes de cámara a una integración de dispositivos: la imagen de una publicación viene de
   una dirección.
 - Mastodon limita una cuenta a 300 publicaciones en 3 horas y 300 solicitudes en 5 minutos; la integración

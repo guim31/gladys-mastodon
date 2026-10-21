@@ -274,6 +274,12 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   déclencheur), rien pour une notification de plus de 10 min, liste blanche facultative (vide = tout le monde)
   pour les mentions, mention privée seulement vers un compte autorisé ou suivi, 30 messages par heure au plus
   depuis les scènes, visibilité « non listé » par défaut et jamais `direct` par `post_status`.
+- **Rattrapage** (corrigé après relecture) : le flux est rouvert **avant** la lecture REST, depuis l'identifiant
+  noté avant l'ouverture (une notification arrivée pendant l'ouverture n'est perdue ni par l'un ni par l'autre),
+  par pages `min_id` (le bout le plus ancien du trou d'abord ; `since_id` rend les 40 plus récentes et saute le
+  reste), 5 pages au plus. L'état de `/data` porte `serveur|identifiant du compte` : un autre compte repart de
+  zéro. Dans une mention privée, les autres `@` sont suivis d'un U+2060 : Mastodon adresse un statut `direct` à
+  tout compte mentionné dans le texte, un `{{text}}` repris d'un déclencheur ajouterait un inconnu.
 - **Premier démarrage** : on prend la place (dernier identifiant) sans rien déclencher ; un autre compte ou
   serveur remet l'état à zéro. `/data/mastodon-state.json` : `lastId` et les 5 dernières notifications
   publiques du widget.

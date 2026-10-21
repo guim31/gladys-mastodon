@@ -276,10 +276,13 @@ export class MastodonClient {
     return url.href;
   }
 
-  /** The newest notifications first, after `sinceId` when given. */
-  async notifications({ sinceId, limit = NOTIFICATIONS_PAGE, signal } = {}) {
+  /**
+   * Notifications, newest first: the newest ones after `sinceId`, or the page
+   * right after `minId` (to read a gap from its oldest end).
+   */
+  async notifications({ sinceId, minId, limit = NOTIFICATIONS_PAGE, signal } = {}) {
     const data = await this.request('GET', '/api/v1/notifications', {
-      query: { since_id: sinceId, limit },
+      query: { since_id: sinceId, min_id: minId, limit },
       signal,
     });
     return Array.isArray(data) ? data : [];
@@ -355,6 +358,9 @@ export class MastodonClient {
       current = await this.request('GET', `/api/v1/media/${encodeURIComponent(media.id)}`, {
         signal,
       });
+    }
+    if (!current?.url) {
+      throw new MastodonError(ERROR_KINDS.IMAGE, 'The server is still processing the image');
     }
     return media.id;
   }
