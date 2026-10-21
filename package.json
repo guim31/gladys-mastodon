@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-mastodon",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "Mastodon for Gladys Assistant: post from scenes, triggers on mentions and followers, account counters.",
   "type": "module",
   "main": "index.js",
   "scripts": {

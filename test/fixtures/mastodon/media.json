@@ -1,0 +1,29 @@
+{
+  "id": "01M5EQ1J45AS2T9SXRWJ6H70DD",
+  "type": "image",
+  "url": "http://social.example/fileserver/01N4JCSKR46ZRAE8E6HPMEZ88P/attachment/original/01M5EQ1J45AS2T9SXRWJ6H70DD.png",
+  "text_url": "http://social.example/fileserver/01N4JCSKR46ZRAE8E6HPMEZ88P/attachment/original/01M5EQ1J45AS2T9SXRWJ6H70DD.png",
+  "preview_url": "http://social.example/fileserver/01N4JCSKR46ZRAE8E6HPMEZ88P/attachment/small/01M5EQ1J45AS2T9SXRWJ6H70DD.webp",
+  "remote_url": null,
+  "preview_remote_url": null,
+  "meta": {
+    "original": {
+      "width": 1,
+      "height": 1,
+      "size": "1x1",
+      "aspect": 1
+    },
+    "small": {
+      "width": 1,
+      "height": 1,
+      "size": "1x1",
+      "aspect": 1
+    },
+    "focus": {
+      "x": 0,
+      "y": 0
+    }
+  },
+  "description": "a pixel",
+  "blurhash": "LyDrQ_|w|w|w|w|w|w|w|w|w|w|w"
+}
