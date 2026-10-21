@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-21
+
 ### Added
 
 - A Mastodon account in Gladys (Mastodon, GoToSocial, Akkoma, Pleroma), with an access token: a device with
@@ -23,3 +25,6 @@ the notes of the version's GitHub Release.
 - The _Mastodon_ dashboard widget: connection, followers, unread and last notifications, _Mark as read_.
 - The _Test the connection_ action and the connection status of the Configuration screen.
 - Documentation in English, French, German and Spanish.
+
+[Unreleased]: https://github.com/guim31/gladys-mastodon/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-mastodon/releases/tag/v1.0.0
