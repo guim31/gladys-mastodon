@@ -1,177 +1,875 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Mastodon",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Post to Mastodon from a scene, run scenes on mentions and new followers, follow your counters.",
+    "fr": "Publiez sur Mastodon depuis une scène, réagissez aux mentions et abonnés, suivez vos compteurs.",
+    "de": "Poste auf Mastodon aus Szenen, reagiere auf Erwähnungen und Follower, verfolge deine Zähler.",
+    "es": "Publique en Mastodon desde una escena, reaccione a menciones y seguidores, siga sus contadores."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-mastodon:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-mastodon/main/cover.png",
+  "categories": ["notifications", "services"],
+  "transports": ["cloud", "local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Getting started",
+        "fr": "Pour commencer",
+        "de": "Erste Schritte",
+        "es": "Para empezar"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "On your Mastodon server, open Preferences → Development → New application, tick the read and write:statuses scopes, save, then copy the access token. A dedicated account for the house is best.",
+        "fr": "Sur votre serveur Mastodon, ouvrez Préférences → Développement → Nouvelle application, cochez les portées read et write:statuses, enregistrez, puis copiez le jeton d'accès. Un compte dédié à la maison est préférable.",
+        "de": "Öffne auf deinem Mastodon-Server Einstellungen → Entwicklung → Neue Anwendung, aktiviere die Berechtigungen read und write:statuses, speichere und kopiere dann das Zugriffstoken. Am besten ein eigenes Konto für das Zuhause.",
+        "es": "En su servidor Mastodon, abra Preferencias → Desarrollo → Nueva aplicación, marque los permisos read y write:statuses, guarde y copie el token de acceso. Es preferible una cuenta dedicada a la casa."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/guim31/gladys-mastodon/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation",
+            "de": "Dokumentation",
+            "es": "Documentación"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "server_url",
+      "type": "string",
+      "label": {
+        "en": "Server address",
+        "fr": "Adresse du serveur",
+        "de": "Serveradresse",
+        "es": "Dirección del servidor"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "The address of your Mastodon (or GoToSocial, Akkoma, Pleroma) server, e.g. https://mastodon.social.",
+        "fr": "L'adresse de votre serveur Mastodon (ou GoToSocial, Akkoma, Pleroma), ex. https://mastodon.social.",
+        "de": "Die Adresse deines Mastodon-Servers (oder GoToSocial, Akkoma, Pleroma), z. B. https://mastodon.social.",
+        "es": "La dirección de su servidor Mastodon (o GoToSocial, Akkoma, Pleroma), p. ej. https://mastodon.social."
+      },
+      "placeholder": {
+        "en": "https://mastodon.social",
+        "fr": "https://mastodon.social",
+        "de": "https://mastodon.social",
+        "es": "https://mastodon.social"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "access_token",
+      "type": "secret",
+      "label": {
+        "en": "Access token",
+        "fr": "Jeton d'accès",
+        "de": "Zugriffstoken",
+        "es": "Token de acceso"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The access token of the application created in Preferences → Development.",
+        "fr": "Le jeton d'accès de l'application créée dans Préférences → Développement.",
+        "de": "Das Zugriffstoken der in Einstellungen → Entwicklung angelegten Anwendung.",
+        "es": "El token de acceso de la aplicación creada en Preferencias → Desarrollo."
+      }
     },
     {
-      "key": "unit",
+      "key": "allowed_accounts",
+      "type": "string",
+      "label": {
+        "en": "Allowed accounts",
+        "fr": "Comptes autorisés",
+        "de": "Erlaubte Konten",
+        "es": "Cuentas autorizadas"
+      },
+      "description": {
+        "en": "Accounts whose mentions fire scenes, separated by commas, e.g. alice@mastodon.social, bob. Empty: nobody. They may also receive private mentions.",
+        "fr": "Comptes dont les mentions déclenchent des scènes, séparés par des virgules, ex. alice@mastodon.social, bob. Vide : personne. Ils peuvent aussi recevoir des mentions privées.",
+        "de": "Konten, deren Erwähnungen Szenen auslösen, durch Kommas getrennt, z. B. alice@mastodon.social, bob. Leer: niemand. Diese Konten können auch private Erwähnungen erhalten.",
+        "es": "Cuentas cuyas menciones activan escenas, separadas por comas, p. ej. alice@mastodon.social, bob. Vacío: nadie. También pueden recibir menciones privadas."
+      },
+      "placeholder": {
+        "en": "alice@mastodon.social, bob",
+        "fr": "alice@mastodon.social, bob",
+        "de": "alice@mastodon.social, bob",
+        "es": "alice@mastodon.social, bob"
+      },
+      "default": ""
+    },
+    {
+      "key": "language",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
       },
-      "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "description": {
+        "en": "Language of the device features and of the errors returned to the scenes.",
+        "fr": "Langue des fonctionnalités de l'appareil et des erreurs rendues aux scènes.",
+        "de": "Sprache der Gerätefunktionen und der an Szenen zurückgegebenen Fehler.",
+        "es": "Idioma de las funciones del dispositivo y de los errores devueltos a las escenas."
+      },
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Checks the access token and shows the account, its followers and unread notifications.",
+        "fr": "Vérifie le jeton d'accès et affiche le compte, ses abonnés et ses notifications non lues.",
+        "de": "Prüft das Zugriffstoken und zeigt das Konto, seine Follower und ungelesenen Benachrichtigungen.",
+        "es": "Comprueba el token de acceso y muestra la cuenta, sus seguidores y notificaciones sin leer."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "mention_received",
+      "label": {
+        "en": "Mastodon mention received",
+        "fr": "Mention Mastodon reçue",
+        "de": "Mastodon-Erwähnung erhalten",
+        "es": "Mención de Mastodon recibida"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A public, unlisted or followers-only post mentions the account.",
+        "fr": "Un message public, non listé ou réservé aux abonnés mentionne le compte.",
+        "de": "Ein öffentlicher, nicht gelisteter oder Follower-Beitrag erwähnt das Konto.",
+        "es": "Una publicación pública, no listada o solo para seguidores menciona la cuenta."
       },
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author",
+            "fr": "Auteur",
+            "de": "Verfasser",
+            "es": "Autor"
+          },
+          "description": {
+            "en": "The address of the account, e.g. alice@mastodon.social. Empty: any account.",
+            "fr": "L'adresse du compte, ex. alice@mastodon.social. Vide : n'importe quel compte.",
+            "de": "Die Adresse des Kontos, z. B. alice@mastodon.social. Leer: jedes Konto.",
+            "es": "La dirección de la cuenta, p. ej. alice@mastodon.social. Vacío: cualquier cuenta."
+          },
+          "placeholder": {
+            "en": "alice@mastodon.social",
+            "fr": "alice@mastodon.social",
+            "de": "alice@mastodon.social",
+            "es": "alice@mastodon.social"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "visibility",
+          "type": "select",
+          "label": {
+            "en": "Visibility",
+            "fr": "Visibilité",
+            "de": "Sichtbarkeit",
+            "es": "Visibilidad"
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "public",
+              "label": {
+                "en": "Public",
+                "fr": "Public",
+                "de": "Öffentlich",
+                "es": "Pública"
+              }
+            },
+            {
+              "value": "unlisted",
+              "label": {
+                "en": "Unlisted",
+                "fr": "Non listé",
+                "de": "Nicht gelistet",
+                "es": "No listada"
+              }
+            },
+            {
+              "value": "private",
+              "label": {
+                "en": "Followers only",
+                "fr": "Abonnés seulement",
+                "de": "Nur Follower",
+                "es": "Solo seguidores"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "author",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Author (address)",
+            "fr": "Auteur (adresse)",
+            "de": "Verfasser (Adresse)",
+            "es": "Autor (dirección)"
+          }
+        },
+        {
+          "key": "author_name",
+          "type": "string",
+          "label": {
+            "en": "Author (display name)",
+            "fr": "Auteur (nom affiché)",
+            "de": "Verfasser (Anzeigename)",
+            "es": "Autor (nombre visible)"
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Text",
+            "fr": "Texte",
+            "de": "Text",
+            "es": "Texto"
+          }
+        },
+        {
+          "key": "visibility",
+          "type": "string",
+          "label": {
+            "en": "Visibility",
+            "fr": "Visibilité",
+            "de": "Sichtbarkeit",
+            "es": "Visibilidad"
+          }
+        },
+        {
+          "key": "status_id",
+          "type": "string",
+          "label": {
+            "en": "Post id",
+            "fr": "Identifiant du message",
+            "de": "Beitrags-ID",
+            "es": "Identificador del mensaje"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Post address",
+            "fr": "Adresse du message",
+            "de": "Adresse des Beitrags",
+            "es": "Dirección del mensaje"
+          }
+        }
+      ]
+    },
+    {
+      "key": "direct_message_received",
+      "label": {
+        "en": "Mastodon private mention received",
+        "fr": "Mention privée Mastodon reçue",
+        "de": "Private Mastodon-Erwähnung erhalten",
+        "es": "Mención privada de Mastodon recibida"
+      },
+      "description": {
+        "en": "A private mention (direct message) reached the account.",
+        "fr": "Une mention privée (message direct) est arrivée sur le compte.",
+        "de": "Eine private Erwähnung (Direktnachricht) hat das Konto erreicht.",
+        "es": "Una mención privada (mensaje directo) ha llegado a la cuenta."
+      },
+      "fields": [
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author",
+            "fr": "Auteur",
+            "de": "Verfasser",
+            "es": "Autor"
+          },
+          "description": {
+            "en": "The address of the account, e.g. alice@mastodon.social. Empty: any account.",
+            "fr": "L'adresse du compte, ex. alice@mastodon.social. Vide : n'importe quel compte.",
+            "de": "Die Adresse des Kontos, z. B. alice@mastodon.social. Leer: jedes Konto.",
+            "es": "La dirección de la cuenta, p. ej. alice@mastodon.social. Vacío: cualquier cuenta."
+          },
+          "placeholder": {
+            "en": "alice@mastodon.social",
+            "fr": "alice@mastodon.social",
+            "de": "alice@mastodon.social",
+            "es": "alice@mastodon.social"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author (address)",
+            "fr": "Auteur (adresse)",
+            "de": "Verfasser (Adresse)",
+            "es": "Autor (dirección)"
+          }
+        },
+        {
+          "key": "author_name",
+          "type": "string",
+          "label": {
+            "en": "Author (display name)",
+            "fr": "Auteur (nom affiché)",
+            "de": "Verfasser (Anzeigename)",
+            "es": "Autor (nombre visible)"
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Text",
+            "fr": "Texte",
+            "de": "Text",
+            "es": "Texto"
+          }
+        },
+        {
+          "key": "status_id",
+          "type": "string",
+          "label": {
+            "en": "Post id",
+            "fr": "Identifiant du message",
+            "de": "Beitrags-ID",
+            "es": "Identificador del mensaje"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Post address",
+            "fr": "Adresse du message",
+            "de": "Adresse des Beitrags",
+            "es": "Dirección del mensaje"
+          }
+        }
+      ]
+    },
+    {
+      "key": "new_follower",
+      "label": {
+        "en": "New Mastodon follower",
+        "fr": "Nouvel abonné Mastodon",
+        "de": "Neuer Mastodon-Follower",
+        "es": "Nuevo seguidor de Mastodon"
+      },
+      "description": {
+        "en": "Someone follows the account, or asks to (locked account).",
+        "fr": "Quelqu'un s'abonne au compte, ou le demande (compte verrouillé).",
+        "de": "Jemand folgt dem Konto oder fragt es an (geschütztes Konto).",
+        "es": "Alguien sigue la cuenta, o lo solicita (cuenta bloqueada)."
+      },
+      "variables": [
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author (address)",
+            "fr": "Auteur (adresse)",
+            "de": "Verfasser (Adresse)",
+            "es": "Autor (dirección)"
+          }
+        },
+        {
+          "key": "author_name",
+          "type": "string",
+          "label": {
+            "en": "Author (display name)",
+            "fr": "Auteur (nom affiché)",
+            "de": "Verfasser (Anzeigename)",
+            "es": "Autor (nombre visible)"
+          }
+        },
+        {
+          "key": "requested",
+          "type": "boolean",
+          "label": {
+            "en": "Follow request to approve",
+            "fr": "Demande d'abonnement à valider",
+            "de": "Folgeanfrage zu bestätigen",
+            "es": "Solicitud de seguimiento por aprobar"
+          }
+        }
+      ]
+    },
+    {
+      "key": "post_interaction",
+      "label": {
+        "en": "Mastodon post boosted or favourited",
+        "fr": "Message Mastodon partagé ou mis en favori",
+        "de": "Mastodon-Beitrag geteilt oder favorisiert",
+        "es": "Publicación de Mastodon impulsada o favorita"
+      },
+      "description": {
+        "en": "Someone boosted or favourited a post of the account.",
+        "fr": "Quelqu'un a partagé ou mis en favori un message du compte.",
+        "de": "Jemand hat einen Beitrag des Kontos geteilt oder favorisiert.",
+        "es": "Alguien ha impulsado o marcado como favorita una publicación de la cuenta."
+      },
+      "fields": [
+        {
+          "key": "kind",
+          "type": "select",
+          "label": {
+            "en": "Kind",
+            "fr": "Type",
+            "de": "Art",
+            "es": "Tipo"
+          },
+          "options": [
+            {
+              "value": "boost",
+              "label": {
+                "en": "Boost",
+                "fr": "Partage",
+                "de": "Geteilt",
+                "es": "Impulso"
+              }
+            },
+            {
+              "value": "favourite",
+              "label": {
+                "en": "Favourite",
+                "fr": "Favori",
+                "de": "Favorit",
+                "es": "Favorito"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "kind",
+          "type": "string",
+          "label": {
+            "en": "Kind (boost or favourite)",
+            "fr": "Type (partage ou favori)",
+            "de": "Art (geteilt oder Favorit)",
+            "es": "Tipo (impulso o favorito)"
+          }
+        },
+        {
+          "key": "author",
+          "type": "string",
+          "label": {
+            "en": "Author (address)",
+            "fr": "Auteur (adresse)",
+            "de": "Verfasser (Adresse)",
+            "es": "Autor (dirección)"
+          }
+        },
+        {
+          "key": "author_name",
+          "type": "string",
+          "label": {
+            "en": "Author (display name)",
+            "fr": "Auteur (nom affiché)",
+            "de": "Verfasser (Anzeigename)",
+            "es": "Autor (nombre visible)"
+          }
+        },
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Text",
+            "fr": "Texte",
+            "de": "Text",
+            "es": "Texto"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Post address",
+            "fr": "Adresse du message",
+            "de": "Adresse des Beitrags",
+            "es": "Dirección del mensaje"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "post_status",
+      "label": {
+        "en": "Post on Mastodon",
+        "fr": "Publier sur Mastodon",
+        "de": "Auf Mastodon posten",
+        "es": "Publicar en Mastodon"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Publishes a post, unlisted by default, with an optional content warning and image.",
+        "fr": "Publie un message, non listé par défaut, avec avertissement et image facultatifs.",
+        "de": "Veröffentlicht einen Beitrag, standardmäßig nicht gelistet, mit optionaler Inhaltswarnung und Bild.",
+        "es": "Publica un mensaje, no listado por defecto, con advertencia e imagen opcionales."
+      },
+      "timeout_seconds": 60,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "Message",
+            "fr": "Message",
+            "de": "Nachricht",
+            "es": "Mensaje"
+          },
+          "description": {
+            "en": "Plain text, scene variables accepted. Cut at the length the server allows.",
+            "fr": "Texte brut, variables de scène acceptées. Coupé à la longueur permise par le serveur.",
+            "de": "Reiner Text, Szenenvariablen erlaubt. Gekürzt auf die vom Server erlaubte Länge.",
+            "es": "Texto plano, se admiten variables de escena. Cortado a la longitud que permite el servidor."
+          },
           "required": true
+        },
+        {
+          "key": "visibility",
+          "type": "select",
+          "label": {
+            "en": "Visibility",
+            "fr": "Visibilité",
+            "de": "Sichtbarkeit",
+            "es": "Visibilidad"
+          },
+          "description": {
+            "en": "Unlisted: visible on the profile, not in the public timelines.",
+            "fr": "Non listé : visible sur le profil, pas dans les fils publics.",
+            "de": "Nicht gelistet: im Profil sichtbar, nicht in öffentlichen Timelines.",
+            "es": "No listada: visible en el perfil, no en las líneas públicas."
+          },
+          "default": "unlisted",
+          "options": [
+            {
+              "value": "public",
+              "label": {
+                "en": "Public",
+                "fr": "Public",
+                "de": "Öffentlich",
+                "es": "Pública"
+              }
+            },
+            {
+              "value": "unlisted",
+              "label": {
+                "en": "Unlisted",
+                "fr": "Non listé",
+                "de": "Nicht gelistet",
+                "es": "No listada"
+              }
+            },
+            {
+              "value": "private",
+              "label": {
+                "en": "Followers only",
+                "fr": "Abonnés seulement",
+                "de": "Nur Follower",
+                "es": "Solo seguidores"
+              }
+            }
+          ]
+        },
+        {
+          "key": "content_warning",
+          "type": "string",
+          "label": {
+            "en": "Content warning",
+            "fr": "Avertissement de contenu",
+            "de": "Inhaltswarnung",
+            "es": "Advertencia de contenido"
+          },
+          "description": {
+            "en": "Optional: the text then hides behind this warning.",
+            "fr": "Facultatif : le texte se cache alors derrière cet avertissement.",
+            "de": "Optional: Der Text versteckt sich dann hinter dieser Warnung.",
+            "es": "Opcional: el texto queda oculto tras esta advertencia."
+          }
+        },
+        {
+          "key": "image_url",
+          "type": "string",
+          "label": {
+            "en": "Image address",
+            "fr": "Adresse de l'image",
+            "de": "Bildadresse",
+            "es": "Dirección de la imagen"
+          },
+          "description": {
+            "en": "Optional: an http(s) address of a JPEG, PNG, GIF or WebP, e.g. the snapshot of a camera.",
+            "fr": "Facultatif : une adresse http(s) d'un JPEG, PNG, GIF ou WebP, ex. l'instantané d'une caméra.",
+            "de": "Optional: eine http(s)-Adresse eines JPEG, PNG, GIF oder WebP, z. B. der Schnappschuss einer Kamera.",
+            "es": "Opcional: una dirección http(s) de un JPEG, PNG, GIF o WebP, p. ej. la instantánea de una cámara."
+          },
+          "placeholder": {
+            "en": "http://192.168.1.30/snapshot.jpg",
+            "fr": "http://192.168.1.30/snapshot.jpg",
+            "de": "http://192.168.1.30/snapshot.jpg",
+            "es": "http://192.168.1.30/snapshot.jpg"
+          }
+        },
+        {
+          "key": "image_description",
+          "type": "string",
+          "label": {
+            "en": "Image description",
+            "fr": "Description de l'image",
+            "de": "Bildbeschreibung",
+            "es": "Descripción de la imagen"
+          },
+          "description": {
+            "en": "Optional: the alternative text, read by screen readers.",
+            "fr": "Facultatif : le texte alternatif, lu par les lecteurs d'écran.",
+            "de": "Optional: der Alternativtext, den Bildschirmleser vorlesen.",
+            "es": "Opcional: el texto alternativo, leído por los lectores de pantalla."
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "sent",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "Sent",
+            "fr": "Envoyé",
+            "de": "Gesendet",
+            "es": "Enviado"
+          }
+        },
+        {
+          "key": "status_id",
+          "type": "string",
+          "label": {
+            "en": "Post id",
+            "fr": "Identifiant du message",
+            "de": "Beitrags-ID",
+            "es": "Identificador del mensaje"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Post address",
+            "fr": "Adresse du message",
+            "de": "Adresse des Beitrags",
+            "es": "Dirección del mensaje"
+          }
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
+        }
+      ]
+    },
+    {
+      "key": "send_direct_message",
+      "label": {
+        "en": "Send a Mastodon private mention",
+        "fr": "Envoyer une mention privée Mastodon",
+        "de": "Private Mastodon-Erwähnung senden",
+        "es": "Enviar una mención privada de Mastodon"
+      },
+      "description": {
+        "en": "Writes privately to an allowed account or one the account follows, never to a stranger.",
+        "fr": "Écrit en privé à un compte autorisé ou suivi par le compte, jamais à un inconnu.",
+        "de": "Schreibt privat an ein erlaubtes oder gefolgtes Konto, nie an Unbekannte.",
+        "es": "Escribe en privado a una cuenta autorizada o seguida por la cuenta, nunca a un desconocido."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "recipient",
+          "type": "string",
+          "label": {
+            "en": "Recipient",
+            "fr": "Destinataire",
+            "de": "Empfänger",
+            "es": "Destinatario"
+          },
+          "description": {
+            "en": "The address of the account, e.g. alice@mastodon.social, or the author variable of a trigger.",
+            "fr": "L'adresse du compte, ex. alice@mastodon.social, ou la variable auteur d'un déclencheur.",
+            "de": "Die Adresse des Kontos, z. B. alice@mastodon.social, oder die Verfasser-Variable eines Auslösers.",
+            "es": "La dirección de la cuenta, p. ej. alice@mastodon.social, o la variable autor de un disparador."
+          },
+          "placeholder": {
+            "en": "alice@mastodon.social",
+            "fr": "alice@mastodon.social",
+            "de": "alice@mastodon.social",
+            "es": "alice@mastodon.social"
+          },
+          "required": true
+        },
+        {
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "Message",
+            "fr": "Message",
+            "de": "Nachricht",
+            "es": "Mensaje"
+          },
+          "description": {
+            "en": "Plain text, scene variables accepted. Cut at the length the server allows.",
+            "fr": "Texte brut, variables de scène acceptées. Coupé à la longueur permise par le serveur.",
+            "de": "Reiner Text, Szenenvariablen erlaubt. Gekürzt auf die vom Server erlaubte Länge.",
+            "es": "Texto plano, se admiten variables de escena. Cortado a la longitud que permite el servidor."
+          },
+          "required": true
+        },
+        {
+          "key": "in_reply_to",
+          "type": "string",
+          "label": {
+            "en": "In reply to (post id)",
+            "fr": "En réponse à (identifiant)",
+            "de": "Antwort auf (Beitrags-ID)",
+            "es": "En respuesta a (identificador)"
+          },
+          "description": {
+            "en": "Optional: the post id variable of a trigger, to answer in the same conversation.",
+            "fr": "Facultatif : la variable identifiant du message d'un déclencheur, pour répondre dans la même conversation.",
+            "de": "Optional: die Beitrags-ID-Variable eines Auslösers, um in derselben Unterhaltung zu antworten.",
+            "es": "Opcional: la variable identificador del mensaje de un disparador, para responder en la misma conversación."
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "sent",
+          "type": "boolean",
+          "label": {
+            "en": "Sent",
+            "fr": "Envoyé",
+            "de": "Gesendet",
+            "es": "Enviado"
+          }
+        },
+        {
+          "key": "status_id",
+          "type": "string",
+          "label": {
+            "en": "Post id",
+            "fr": "Identifiant du message",
+            "de": "Beitrags-ID",
+            "es": "Identificador del mensaje"
+          }
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Post address",
+            "fr": "Adresse du message",
+            "de": "Adresse des Beitrags",
+            "es": "Dirección del mensaje"
+          }
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "label": {
+            "en": "Error",
+            "fr": "Erreur",
+            "de": "Fehler",
+            "es": "Error"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "mastodon",
+      "label": {
+        "en": "Mastodon",
+        "fr": "Mastodon",
+        "de": "Mastodon",
+        "es": "Mastodon"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Account connection, followers, unread notifications and the last ones.",
+        "fr": "Connexion du compte, abonnés, notifications non lues et dernières reçues.",
+        "de": "Verbindung des Kontos, Follower, ungelesene und letzte Benachrichtigungen.",
+        "es": "Conexión de la cuenta, seguidores, notificaciones sin leer y últimas recibidas."
+      },
+      "icon": "message-circle",
+      "action_timeout_seconds": 30
     }
   ]
 }

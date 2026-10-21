@@ -32,15 +32,21 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/app.js                        the integration: connection loop, streaming + REST catch-up, triggers,
+                                  counters, scene actions, widget, test action
+src/mastodon/client.js            REST API over fetch, typed errors (MastodonError.kind), id comparison
+src/mastodon/stream.js            the streaming API (WebSocket, token in Sec-WebSocket-Protocol)
+src/notifications.js              notification → scene event (HTML → text, author with its domain)
+src/device.js                     the account device: four counter-sensor/integer features
+src/image.js                      the optional image of a post, read from an http(s) address
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+src/texts.js                      four-language texts outside the widget (errors, report, feature names)
+src/widgets.js                    the "mastodon" dashboard widget
+src/store.js, src/log.js          /data persistence (atomic writes), one-line repeated failures
+gladys-assistant-integration.json manifest: device type, triggers, scene actions, widget...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
+test/                             node --test, fake Gladys of the SDK + fake Mastodon (REST, streaming)
+test/fixtures/mastodon/           answers recorded from a real GoToSocial 0.22 (domain replaced)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +76,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, manifest texts, feature names, and `docs/{en,fr,de,es}.md`, kept in
+  sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +240,48 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Mastodon (cette intégration)
+
+- **Type `device`, pas `communication`** : le brief veut un appareil par compte (compteurs), et le type
+  communication n'a ni appareils ni découverte. Revers : seule une intégration communication reçoit les images
+  de caméra de Gladys (`onSendMessage` avec `file`) ; ici l'image d'un message vient d'une **adresse http(s)**
+  saisie dans la scène (instantané de caméra, identifiants `user:pass@` envoyés en Basic, jamais journalisés,
+  8 Mo, types image seulement).
+- **API** : `verify_credentials` (compteurs), `/api/v2/instance` puis v1 (domaine, `max_characters`, adresse
+  du streaming), `GET /api/v1/notifications?since_id=` (rattrapage), streaming
+  `/api/v1/streaming?stream=user:notification` (charge utile = **chaîne JSON** à reparser), `POST /api/v2/media`
+  (202 et `url: null` tant que l'image est traitée : attendre avant de publier), `POST /api/v1/statuses` avec
+  `Idempotency-Key`, `accounts/lookup` + `accounts/relationships` (garde des mentions privées), marqueurs.
+- **Jeton du streaming dans `Sec-WebSocket-Protocol`** (le `WebSocket` de Node n'envoie pas d'en-tête
+  `Authorization`), jamais dans l'adresse : Mastodon et GoToSocial l'acceptent. Un mauvais jeton : fermeture
+  1006 avant l'ouverture, sans raison.
+- **Vérifié contre un vrai GoToSocial 0.22.2 (Docker, 21/10/2026)**, image de l'intégration dans le bac à
+  sable (rootfs en lecture seule, `cap-drop ALL`, 256 Mo : ~19 Mo au repos, ~25 Mo en charge), faux Gladys du
+  SDK : 30 contrôles (4 déclencheurs, 2 actions avec image et réponse dans la conversation, liste blanche,
+  widget et « marquer comme lu », rattrapage après arrêt, redémarrage du serveur, mauvais jeton). Pièges payés :
+  - GoToSocial n'a **pas `/api/v1/notifications/unread_count`** (Mastodon ≥ 4.3) : repli par le marqueur
+    (`GET /api/v1/markers`) et une page de notifications, donc plafonné à 40.
+  - `/api/v2/instance` de GoToSocial annonce `wss://` même servi en `http://` : garder le schéma de l'adresse
+    configurée, ne prendre que l'hôte annoncé s'il diffère (serveur de streaming séparé de Mastodon).
+  - Comptes GoToSocial **verrouillés par défaut** : un abonnement arrive en `follow_request`. GoToSocial ne
+    notifie une demande qu'**une fois par compte** (se désabonner puis redemander ne renotifie pas).
+  - Identifiants : flocons numériques sur Mastodon (plus longs qu'un double), ULID sur GoToSocial :
+    `compareIds` compare par longueur puis par texte.
+  - Une mention privée est une notification `mention` dont le statut a `visibility: "direct"` ; elle ne
+    déclenche que `direct_message_received` et n'apparaît jamais dans le widget.
+- **Garde-fous** : jamais de déclencheur sur le compte lui-même (pas de boucle scène → message →
+  déclencheur), rien pour une notification de plus de 10 min, liste blanche pour les mentions (vide = personne,
+  comme Matrix et Mattermost, demande de l'orchestrateur du 21/10), mention privée seulement vers un compte autorisé ou suivi, 30 messages par heure au plus
+  depuis les scènes, visibilité « non listé » par défaut et jamais `direct` par `post_status`.
+- **Rattrapage** (corrigé après relecture) : le flux est rouvert **avant** la lecture REST, depuis l'identifiant
+  noté avant l'ouverture (une notification arrivée pendant l'ouverture n'est perdue ni par l'un ni par l'autre),
+  par pages `min_id` (le bout le plus ancien du trou d'abord ; `since_id` rend les 40 plus récentes et saute le
+  reste), 5 pages au plus. L'état de `/data` porte `serveur|identifiant du compte` : un autre compte repart de
+  zéro. Dans une mention privée, les autres `@` sont suivis d'un U+2060 : Mastodon adresse un statut `direct` à
+  tout compte mentionné dans le texte, un `{{text}}` repris d'un déclencheur ajouterait un inconnu.
+- **Premier démarrage** : on prend la place (dernier identifiant) sans rien déclencher ; un autre compte ou
+  serveur remet l'état à zéro. `/data/mastodon-state.json` : `lastId` et les 5 dernières notifications
+  publiques du widget.
+- Pas vérifié contre Mastodon lui-même (image officielle + PostgreSQL + Redis jugée trop lourde pour la
+  machine partagée), ni Akkoma/Pleroma : l'API utilisée est celle documentée par Mastodon.

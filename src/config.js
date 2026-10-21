@@ -1,45 +1,96 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
-//
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Integration configuration (the `config_schema` of the manifest), normalized
+// so the rest of the code never deals with `undefined`, stray spaces or a
+// half-typed address.
 // -----------------------------------------------------------------------------
 
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
 // Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+// `config_schema` of the manifest (test/manifest.test.js).
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  server_url: '',
+  access_token: '',
+  allowed_accounts: '',
+  language: 'fr',
 };
+
+const trimmed = (value) => (typeof value === 'string' ? value.trim() : '');
+
+// user@domain, as Mastodon writes it (letters, digits, "_", and "." or "-" for
+// other servers' accounts).
+const ACCOUNT = /^[a-z0-9_.-]+(?:@[a-z0-9.-]+\.[a-z0-9-]+|@[a-z0-9-]+)?$/i;
+
+/** Splits a list typed in a text field: commas, semicolons, spaces or new lines. */
+export function parseList(value) {
+  const items = trimmed(value)
+    .split(/[\s,;]+/)
+    .map((item) => item.trim())
+    .filter((item) => item !== '');
+  return [...new Set(items)];
+}
+
+/**
+ * An account as a person types it: "@alice@example.social", "alice@example.social",
+ * "alice" (an account of the configured server), or the address of a profile
+ * (https://example.social/@alice). Lower case, without the leading @.
+ * @param {string} value
+ * @param {string} [localDomain] the domain of the configured server, for "alice"
+ * @returns {string|null}
+ */
+export function parseAccount(value, localDomain) {
+  let text = trimmed(value);
+  const profile = text.match(/^https?:\/\/([^/\s]+)\/@([^/@\s]+)\/?$/i);
+  if (profile) {
+    text = `${profile[2]}@${profile[1]}`;
+  }
+  text = text.replace(/^@/, '').toLowerCase();
+  if (!ACCOUNT.test(text)) {
+    return null;
+  }
+  if (!text.includes('@') && localDomain) {
+    return `${text}@${localDomain.toLowerCase()}`;
+  }
+  return text;
+}
+
+/**
+ * The server address as a URL, or null when it is empty or not understood.
+ * A bare host name gets https://. A sub-path is dropped: the Mastodon API
+ * always lives at the root of its domain.
+ * @param {string} value
+ * @returns {URL|null}
+ */
+export function parseServer(value) {
+  const text = trimmed(value).replace(/\/+$/, '');
+  if (text === '') {
+    return null;
+  }
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+      return null;
+    }
+    url.search = '';
+    url.hash = '';
+    url.pathname = '/';
+    return url;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * @param {Record<string, unknown>} [raw] config returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const config = raw ?? {};
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    server_url: trimmed(config.server_url),
+    access_token: trimmed(config.access_token),
+    // Kept as typed: "alice" is completed with the domain of the server once known.
+    allowed_accounts: parseList(config.allowed_accounts),
+    language: LANGUAGES.includes(config.language) ? config.language : DEFAULT_CONFIG.language,
   };
 }

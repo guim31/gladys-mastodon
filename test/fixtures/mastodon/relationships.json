@@ -1,0 +1,34 @@
+[
+  {
+    "id": "01VR966PSGCAHN4KEE3C9DPBGZ",
+    "following": false,
+    "showing_reblogs": true,
+    "notifying": false,
+    "followed_by": false,
+    "blocking": false,
+    "blocked_by": false,
+    "muting": false,
+    "muting_notifications": false,
+    "requested": true,
+    "requested_by": true,
+    "domain_blocking": false,
+    "endorsed": false,
+    "note": ""
+  },
+  {
+    "id": "01B87B9EM3RA2C3PKGXW8B6EZS",
+    "following": false,
+    "showing_reblogs": false,
+    "notifying": false,
+    "followed_by": false,
+    "blocking": false,
+    "blocked_by": false,
+    "muting": false,
+    "muting_notifications": false,
+    "requested": false,
+    "requested_by": false,
+    "domain_blocking": false,
+    "endorsed": false,
+    "note": ""
+  }
+]
