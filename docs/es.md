@@ -28,9 +28,9 @@ Funciona con cualquier servidor que hable la API de Mastodon: Mastodon, GoToSoci
 2. En su pestaña **Configuración**, rellene:
    - **Dirección del servidor**: la dirección de su servidor, p. ej. `https://mastodon.social`.
    - **Token de acceso**: el token copiado arriba.
-   - **Cuentas autorizadas** (opcional): las cuentas cuyas menciones inician escenas, separadas por comas,
-     p. ej. `alice@mastodon.social, bob` (`bob` es una cuenta de su propio servidor). Vacío: cuentan las
-     menciones de todo el mundo. Estas cuentas también pueden recibir menciones privadas de las escenas.
+   - **Cuentas autorizadas**: las cuentas cuyas menciones inician escenas, separadas por comas,
+     p. ej. `alice@mastodon.social, bob` (`bob` es una cuenta de su propio servidor). Vacío: ninguna
+     mención inicia una escena. Estas cuentas también pueden recibir menciones privadas de las escenas.
    - **Idioma de los nombres**: el idioma de las funciones del dispositivo y de los errores devueltos a las
      escenas.
 3. Guarde. El estado pasa a «conectado», y la cuenta aparece en la pestaña **Descubrir**: añádala para obtener
@@ -68,8 +68,8 @@ mueve el marcador de lectura a la notificación más reciente, **Probar la conex
   publicación de la cuenta. Filtro: **Tipo**. Variables: el tipo (`boost` para un impulso, `favourite` para un
   favorito), el autor, el texto y la dirección de la publicación.
 
-Cuando **Cuentas autorizadas** está rellenado, las menciones de las demás cuentas no inician nada (los
-seguidores, impulsos y favoritos, sí). La propia cuenta nunca inicia un disparador, y las notificaciones de más
+Solo las menciones de las **Cuentas autorizadas** inician una escena: con la lista vacía, ninguna (los
+seguidores, impulsos y favoritos activan sus disparadores para todos). La propia cuenta nunca inicia un disparador, y las notificaciones de más
 de 10 minutos (recibidas mientras Gladys estaba detenido) no inician nada.
 
 ### Acciones
@@ -107,7 +107,7 @@ por encima, se omiten.
 - **Ningún disparador aunque los contadores funcionan**: puede que un proxy inverso bloquee la API de
   streaming (paso a WebSocket). La integración lee entonces las notificaciones cada minuto: los disparadores
   llegan con retraso, pero llegan. Compruebe que su proxy transmite `/api/v1/streaming` como WebSocket.
-- **Una mención no inicia nada**: compruebe **Cuentas autorizadas** (dirección completa, p. ej.
+- **Una mención no inicia nada**: compruebe que su autor figura en **Cuentas autorizadas** (dirección completa, p. ej.
   `alice@mastodon.social`) y el filtro **Autor** del disparador; ajuste `LOG_LEVEL=debug` para ver las
   menciones ignoradas en los registros.
 - **Falta la imagen**: la dirección debe ser accesible desde el contenedor de la integración y responder con un

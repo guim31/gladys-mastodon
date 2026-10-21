@@ -28,9 +28,9 @@ Elle fonctionne avec tout serveur qui parle l'API de Mastodon : Mastodon, GoToSo
 2. Dans son onglet **Configuration**, remplissez :
    - **Adresse du serveur** : l'adresse de votre serveur, ex. `https://mastodon.social`.
    - **Jeton d'accès** : le jeton copié plus haut.
-   - **Comptes autorisés** (facultatif) : les comptes dont les mentions démarrent des scènes, séparés par des
-     virgules, ex. `alice@mastodon.social, bob` (`bob` est un compte de votre propre serveur). Vide : les
-     mentions de tout le monde comptent. Ces comptes peuvent aussi recevoir des mentions privées des scènes.
+   - **Comptes autorisés** : les comptes dont les mentions démarrent des scènes, séparés par des
+     virgules, ex. `alice@mastodon.social, bob` (`bob` est un compte de votre propre serveur). Vide : aucune
+     mention ne démarre de scène. Ces comptes peuvent aussi recevoir des mentions privées des scènes.
    - **Langue des noms** : la langue des fonctionnalités de l'appareil et des erreurs rendues aux scènes.
 3. Enregistrez. L'état passe à « connecté », et le compte apparaît dans l'onglet **Découverte** : ajoutez-le
    pour obtenir ses compteurs.
@@ -69,8 +69,8 @@ test ci-dessus.
   Filtre : **Type**. Variables : le type (`boost` pour un partage, `favourite` pour un favori), l'auteur, le
   texte et l'adresse du message.
 
-Quand **Comptes autorisés** est rempli, les mentions des autres comptes ne démarrent rien (les abonnés, partages
-et favoris, si). Le compte lui-même ne démarre jamais de déclencheur, et les notifications de plus de
+Seules les mentions des **Comptes autorisés** démarrent une scène : liste vide, aucune (les abonnés, partages et
+favoris déclenchent pour tout le monde). Le compte lui-même ne démarre jamais de déclencheur, et les notifications de plus de
 10 minutes (reçues pendant que Gladys était arrêté) ne démarrent rien.
 
 ### Actions
@@ -110,7 +110,7 @@ ignorés.
   proxy inverse (passage en WebSocket). L'intégration lit alors les notifications chaque minute : les
   déclencheurs arrivent en retard, mais ils arrivent. Vérifiez que votre proxy transmet `/api/v1/streaming` en
   WebSocket.
-- **Une mention ne démarre rien** : vérifiez **Comptes autorisés** (adresse complète, ex.
+- **Une mention ne démarre rien** : vérifiez que son auteur figure dans **Comptes autorisés** (adresse complète, ex.
   `alice@mastodon.social`) et le filtre **Auteur** du déclencheur ; réglez `LOG_LEVEL=debug` pour voir les
   mentions ignorées dans les journaux.
 - **L'image manque** : l'adresse doit être joignable depuis le conteneur de l'intégration, et répondre par un

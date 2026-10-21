@@ -20,7 +20,7 @@ account.
   optional image read from an http(s) address such as a camera snapshot, with its description) and _Send a
   Mastodon private mention_ (only to an allowed account or one the account follows, optionally in reply to a
   post). Both return sent, post id, address and error.
-- **Safety**: an optional list of allowed accounts for the mention triggers, never a trigger on the account
+- **Safety**: the mention triggers only fire for the listed allowed accounts (an empty list: nobody), never a trigger on the account
   itself (no scene loop), nothing fired for notifications older than 10 minutes, at most 30 posts an hour
   from scenes.
 - **Dashboard widget**: connection, followers, unread notifications, the last five notifications (never the

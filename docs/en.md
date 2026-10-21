@@ -27,8 +27,8 @@ It works with any server speaking the Mastodon API: Mastodon, GoToSocial, Akkoma
 2. In its **Configuration** tab, fill in:
    - **Server address**: the address of your server, e.g. `https://mastodon.social`.
    - **Access token**: the token copied above.
-   - **Allowed accounts** (optional): the accounts whose mentions start scenes, separated by commas, e.g.
-     `alice@mastodon.social, bob` (`bob` is an account of your own server). Empty: everyone's mentions count.
+   - **Allowed accounts**: the accounts whose mentions start scenes, separated by commas, e.g.
+     `alice@mastodon.social, bob` (`bob` is an account of your own server). Empty: no mention starts a scene.
      These accounts may also receive private mentions from the scenes.
    - **Language of the names**: the language of the device features and of the errors returned to the
      scenes.
@@ -65,8 +65,8 @@ the read marker to the newest notification, **Test the connection** runs the tes
 - **Mastodon post boosted or favourited**: someone boosted or favourited a post of the account. Filter:
   **Kind**. Variables: the kind (`boost` or `favourite`), the author, the text and the address of the post.
 
-When **Allowed accounts** is filled in, the mentions of other accounts start nothing (followers, boosts and
-favourites still do). The account itself never starts a trigger, and notifications older than 10 minutes
+Only the mentions of the **Allowed accounts** start a scene: with an empty list, none does (followers,
+boosts and favourites start their triggers for everyone). The account itself never starts a trigger, and notifications older than 10 minutes
 (received while Gladys was stopped) start nothing.
 
 ### Actions
@@ -102,7 +102,7 @@ actions of the scene. At most 30 posts an hour come from the scenes: beyond, the
 - **No trigger while the counters work**: the streaming API may be blocked by a reverse proxy (WebSocket
   upgrade). The integration then reads the notifications every minute: triggers come late but come. Check
   that your proxy forwards `/api/v1/streaming` as a WebSocket.
-- **A mention starts nothing**: check **Allowed accounts** (full address, e.g. `alice@mastodon.social`) and
+- **A mention starts nothing**: check that its author is in **Allowed accounts** (full address, e.g. `alice@mastodon.social`) and
   the **Author** filter of the trigger; set `LOG_LEVEL=debug` to see the ignored mentions in the logs.
 - **The image is missing**: the address must be reachable from the container of the integration, and
   answer with an image type.

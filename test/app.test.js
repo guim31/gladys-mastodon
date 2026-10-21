@@ -410,7 +410,7 @@ test('the test action reports the account, its counters and the allowed list', a
   assert.equal(ack.success, true);
   assert.equal(
     ack.data.message?.en ?? ack.data.en,
-    'Connected as @gladys@social.example. 3 followers, 0 unread notifications. No allowed account listed: the triggers fire for everyone.',
+    'Connected as @gladys@social.example. 3 followers, 0 unread notifications. Allowed accounts: 2.',
   );
 });
 
@@ -562,4 +562,22 @@ test('stop() does not wait for a stream that never opens', async (t) => {
   await world.app.stop();
   assert.ok(Date.now() - started < 1000);
   t.after(() => {});
+});
+
+test('no allowed account: mentions start nothing, followers still do', async (t) => {
+  const world = await connected(t, { config: { ...BASE_CONFIG, allowed_accounts: '' } });
+  world.server.notify('mention', ALICE, { text: 'open the garage' });
+  world.server.notify('mention', ALICE, { text: 'open the garage', visibility: 'direct' });
+  world.server.notify('follow', BOB);
+  world.server.notify('favourite', BOB);
+  await settle();
+  assert.deepEqual(
+    world.fake.sceneEvents.map((event) => event.key),
+    [TRIGGERS.FOLLOWER, TRIGGERS.INTERACTION],
+  );
+  const ack = await world.fake.action(ACTION_KEY, {});
+  assert.match(
+    ack.data.message?.en ?? ack.data.en,
+    /No allowed account: the mentions start no scene\./,
+  );
 });

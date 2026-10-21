@@ -92,10 +92,10 @@
         "es": "Cuentas autorizadas"
       },
       "description": {
-        "en": "Accounts whose mentions fire scenes, separated by commas, e.g. alice@mastodon.social, bob. Empty: everyone. They may also receive private mentions.",
-        "fr": "Comptes dont les mentions déclenchent des scènes, séparés par des virgules, ex. alice@mastodon.social, bob. Vide : tout le monde. Ils peuvent aussi recevoir des mentions privées.",
-        "de": "Konten, deren Erwähnungen Szenen auslösen, durch Kommas getrennt, z. B. alice@mastodon.social, bob. Leer: alle. Diese Konten können auch private Erwähnungen erhalten.",
-        "es": "Cuentas cuyas menciones activan escenas, separadas por comas, p. ej. alice@mastodon.social, bob. Vacío: todo el mundo. También pueden recibir menciones privadas."
+        "en": "Accounts whose mentions fire scenes, separated by commas, e.g. alice@mastodon.social, bob. Empty: nobody. They may also receive private mentions.",
+        "fr": "Comptes dont les mentions déclenchent des scènes, séparés par des virgules, ex. alice@mastodon.social, bob. Vide : personne. Ils peuvent aussi recevoir des mentions privées.",
+        "de": "Konten, deren Erwähnungen Szenen auslösen, durch Kommas getrennt, z. B. alice@mastodon.social, bob. Leer: niemand. Diese Konten können auch private Erwähnungen erhalten.",
+        "es": "Cuentas cuyas menciones activan escenas, separadas por comas, p. ej. alice@mastodon.social, bob. Vacío: nadie. También pueden recibir menciones privadas."
       },
       "placeholder": {
         "en": "alice@mastodon.social, bob",

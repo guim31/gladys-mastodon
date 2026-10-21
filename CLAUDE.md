@@ -271,8 +271,8 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
   - Une mention privée est une notification `mention` dont le statut a `visibility: "direct"` ; elle ne
     déclenche que `direct_message_received` et n'apparaît jamais dans le widget.
 - **Garde-fous** : jamais de déclencheur sur le compte lui-même (pas de boucle scène → message →
-  déclencheur), rien pour une notification de plus de 10 min, liste blanche facultative (vide = tout le monde)
-  pour les mentions, mention privée seulement vers un compte autorisé ou suivi, 30 messages par heure au plus
+  déclencheur), rien pour une notification de plus de 10 min, liste blanche pour les mentions (vide = personne,
+  comme Matrix et Mattermost, demande de l'orchestrateur du 21/10), mention privée seulement vers un compte autorisé ou suivi, 30 messages par heure au plus
   depuis les scènes, visibilité « non listé » par défaut et jamais `direct` par `post_status`.
 - **Rattrapage** (corrigé après relecture) : le flux est rouvert **avant** la lecture REST, depuis l'identifiant
   noté avant l'ouverture (une notification arrivée pendant l'ouverture n'est perdue ni par l'un ni par l'autre),

@@ -8,8 +8,8 @@
 //   handled: nothing is missed, nothing is handled twice. Without streaming
 //   (refused by a proxy), the notifications are read every minute.
 // - Notifications fire the scene triggers: mention, private mention, new
-//   follower, boost or favourite. Mentions from accounts outside the allowed
-//   list (when one is set) fire nothing. Never on a notification of the
+//   follower, boost or favourite. Mentions fire only for the allowed
+//   accounts (an empty list: nobody); followers, boosts and favourites for all. Never on a notification of the
 //   account itself, never on one older than 10 minutes.
 // - The device: four counters, read every 5 minutes and after a notification.
 // - Scene actions: post a status (unlisted by default, content warning,
@@ -312,8 +312,7 @@ export function registerHandlers(gladys, options = {}) {
     }
     if (
       [TRIGGERS.MENTION, TRIGGERS.DIRECT].includes(event.key) &&
-      allowed.size > 0 &&
-      !allowed.has(event.author)
+      !allowed.has(event.author) // an empty list: nobody (a "garage" scene obeys no stranger)
     ) {
       logger.debug(`Mention from @${event.author} ignored: not an allowed account`);
       return;

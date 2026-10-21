@@ -28,9 +28,9 @@ Die Integration funktioniert mit jedem Server, der die Mastodon-API spricht: Mas
 2. Fülle im Tab **Konfiguration** aus:
    - **Serveradresse**: die Adresse deines Servers, z. B. `https://mastodon.social`.
    - **Zugriffstoken**: das oben kopierte Token.
-   - **Erlaubte Konten** (optional): die Konten, deren Erwähnungen Szenen starten, durch Kommas getrennt,
-     z. B. `alice@mastodon.social, bob` (`bob` ist ein Konto deines eigenen Servers). Leer: Die Erwähnungen
-     aller zählen. Diese Konten können auch private Erwähnungen der Szenen erhalten.
+   - **Erlaubte Konten**: die Konten, deren Erwähnungen Szenen starten, durch Kommas getrennt,
+     z. B. `alice@mastodon.social, bob` (`bob` ist ein Konto deines eigenen Servers). Leer: Keine Erwähnung
+     startet eine Szene. Diese Konten können auch private Erwähnungen der Szenen erhalten.
    - **Sprache der Namen**: die Sprache der Gerätefunktionen und der an Szenen zurückgegebenen Fehler.
 3. Speichere. Der Status wechselt auf „verbunden“, und das Konto erscheint im Tab **Entdecken**: Füge es
    hinzu, um seine Zähler zu bekommen.
@@ -69,8 +69,8 @@ testen** startet den Test oben.
   Filter: **Art**. Variablen: die Art (`boost` für geteilt, `favourite` für Favorit), der Verfasser, der Text
   und die Adresse des Beitrags.
 
-Wenn **Erlaubte Konten** ausgefüllt ist, starten die Erwähnungen anderer Konten nichts (Follower, geteilte
-Beiträge und Favoriten schon). Das Konto selbst startet nie einen Auslöser, und Benachrichtigungen, die älter
+Nur die Erwähnungen der **Erlaubten Konten** starten eine Szene: Bei leerer Liste keine (Follower, geteilte
+Beiträge und Favoriten lösen für alle aus). Das Konto selbst startet nie einen Auslöser, und Benachrichtigungen, die älter
 als 10 Minuten sind (erhalten, während Gladys gestoppt war), starten nichts.
 
 ### Aktionen
@@ -110,7 +110,7 @@ sie übersprungen.
   Proxy blockiert (WebSocket-Upgrade). Die Integration liest die Benachrichtigungen dann jede Minute: Die
   Auslöser kommen verspätet, aber sie kommen. Prüfe, dass dein Proxy `/api/v1/streaming` als WebSocket
   weiterleitet.
-- **Eine Erwähnung startet nichts**: Prüfe **Erlaubte Konten** (vollständige Adresse, z. B.
+- **Eine Erwähnung startet nichts**: Prüfe, ob ihr Verfasser in **Erlaubte Konten** steht (vollständige Adresse, z. B.
   `alice@mastodon.social`) und den Filter **Verfasser** des Auslösers; setze `LOG_LEVEL=debug`, um die
   ignorierten Erwähnungen in den Logs zu sehen.
 - **Das Bild fehlt**: Die Adresse muss vom Container der Integration erreichbar sein und mit einem Bildtyp

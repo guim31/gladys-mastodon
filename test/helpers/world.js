@@ -23,7 +23,7 @@ export const START = Date.parse('2026-10-21T10:00:00Z');
 export const BASE_CONFIG = {
   server_url: SERVER,
   access_token: TOKEN,
-  allowed_accounts: '',
+  allowed_accounts: 'alice, mallory@elsewhere.example',
   language: 'en',
 };
 

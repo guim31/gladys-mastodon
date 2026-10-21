@@ -16,7 +16,7 @@ the notes of the version's GitHub Release.
   its followers, accounts followed, posts and unread notifications.
 - The _Mastodon mention received_, _Mastodon private mention received_, _New Mastodon follower_ and
   _Mastodon post boosted or favourited_ triggers, in real time through the streaming API, with the author,
-  the text, the post id and address; an optional list of allowed accounts for the mentions.
+  the text, the post id and address; the mentions only count from the allowed accounts (an empty list: nobody).
 - The _Post on Mastodon_ scene action (unlisted by default, content warning, optional image from an address)
   and the _Send a Mastodon private mention_ scene action (only to an allowed or followed account), with the
   outputs sent, post id, address and error.
