@@ -1,6 +1,6 @@
 {
   "name": "gladys-mastodon",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Mastodon for Gladys Assistant: post from scenes, triggers on mentions and followers, account counters.",
   "type": "module",
